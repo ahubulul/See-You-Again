@@ -1,15 +1,39 @@
 import sys
+import threading
+import tkinter as tk
 from time import sleep
 import pygame
 
 pygame.mixer.init()
-pygame.mixer.music.load("See U Again.mp3")
-pygame.mixer.music.play()
+try:
+    pygame.mixer.music.load("See U Again.mp3")
+except Exception as e:
+    print(
+        f"Lỗi tải nhạc: {e}. Vui lòng kiểm tra lại tên file See U Again.mp3'"
+    )
 
-def print_lyrics():
-    # Danh sách (dòng chữ, thời gian delay giữa các ký tự, thời gian nghỉ sau khi xong dòng)
+root = tk.Tk()
+root.title("Lyrics Player")
+root.geometry("600x400")
+root.configure(bg="#1e1e1e")  
+
+label = tk.Label(
+    root,
+    text="",
+    font=("Segoe UI", 16, "bold"),
+    fg="#ffffff",
+    bg="#1e1e1e",
+    wraplength=550,
+    justify="center",
+)
+label.pack(expand=True)
+
+def animate_lyrics():
+    if pygame.mixer.music.get_busy() or True:
+        pygame.mixer.music.play()
+
     lines = [
-        ("20/20, 20/20 vision", 0.08, 0.9),
+                ("20/20, 20/20 vision", 0.08, 0.9),
                 ("Cupid hit me, cupid hit me with precision", 0.04, 1.2),
                 ("I wonder if you look both ways", 0.07, 0.4),
                 ("When you cross my mind, ", 0.06, 0.7),
@@ -35,17 +59,23 @@ def print_lyrics():
     sleep(0.5)
 
     for line, char_delay, line_delay in lines:
+        current_text = ""
         for char in line:
-            print(char, end='', flush=True)
+            current_text += char
+            label.config(text=current_text)
             sleep(char_delay)
-        print() # Xuống dòng
         sleep(line_delay)
 
-try:
-    print_lyrics()
-    # Giữ chương trình chạy nếu nhạc chưa phát xong
-    while pygame.mixer.music.get_busy():
-        sleep(0.5)
-except KeyboardInterrupt:
+def start_app():
+    threading.Thread(target=animate_lyrics, daemon=True).start()
+
+def on_closing():
     pygame.mixer.music.stop()
+    root.destroy()
     sys.exit()
+
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
+root.after(500, start_app)
+root.mainloop()
